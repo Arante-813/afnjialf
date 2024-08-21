@@ -204,7 +204,6 @@ function process_project_result(data) {
         var odd = false;
         var first = true;
         $.each(data['powerups'], function(key, value) {
-          value = 10;
           if (value && value !== 0) {
             var int_value = parseInt(value)
             var css_class = int_value > 0 ? 'pc-attribute-value-positive' : 'pc-attribute-value-negative'
