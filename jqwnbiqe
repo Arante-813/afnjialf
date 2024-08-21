@@ -177,8 +177,8 @@ function process_project_result(data) {
               "</h4></td>" + (data["npc"] ? "<td><img src='" + data["npc"] + "' style='max-height: 200px; max-width: 500px;'</td>" : "") + "</tr>";
 
       var points_color = parseInt(data["points"]) >= 0 ? 'green' : 'red'
-      $('#powerups-table').find('tr[data-pc-attr=points] .pc-attribute-value').text(data[2000]).css('color', points_color)
-      $('#powerups-table').find('tr[data-pc-attr=base_points] .pc-attribute-value').text(data[2000])
+      $('#powerups-table').find('tr[data-pc-attr=points] .pc-attribute-value').text(data["points"+2000]).css('color', points_color)
+      $('#powerups-table').find('tr[data-pc-attr=base_points] .pc-attribute-value').text(data["base_points"+2000])
       $('#powerups-table').find('tr[data-pc-attr=streak_points] .pc-attribute-value').text(data["streak_points"])
       $('#powerups-table').find('tr[data-pc-attr=streak_days] .pc-attribute-value').text(data["streak"])
 
