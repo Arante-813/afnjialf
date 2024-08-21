@@ -1,0 +1,579 @@
+$(function(){
+    $('.wizard-steps').slimScrollHorizontal({
+    height: '100%',
+    width: '100%',
+    alwaysVisible: false,
+    start: 'left',
+    position: 'bottom',
+    wheelStep: 10
+    }).css({ paddingBottom: '10px' });
+});
+
+String.prototype.interpolate = function(o) {
+  return this.replace(/%{([^{}]*)}/g,
+    function (a, b) {
+      var r = o[b];
+      return typeof r === 'string' || typeof r === 'number' ? r : a;
+    }
+  );
+};
+
+function formatLink(s){
+	var index = s.indexOf("href");
+	var result = ""; var comes = 0;
+	for (var i = index; i <= s.length; i++){
+		if (s[i] == '"' || s[i] == "'"){
+			if (comes == 0){
+				comes = 1;
+			}else{
+				break
+			}
+		}else{
+			if (comes == 1){
+				result += s[i];
+			}
+		}
+	}
+	return result;
+}
+
+$(document).ready(function() {
+  $('[data-rel=popover]').popover({trigger: 'hover'});
+  $('[data-rel="clickover"]').clickover();
+  $('#send-help-button').click(function () {
+      save_help_ticket(false);
+  });
+  $('#send-error-button').click(function () {
+      save_help_ticket(true);
+  });
+    showQuestWarnings();
+    showCodeathlonWarning();
+});
+
+function showQuestWarnings(){
+    if($('.quest-to-claim').length){
+        $('#quests_link .progress').addClass('warning');
+        $('#quests_link').tooltip('destroy').tooltip({placement:'left', title:$('.quest-to-claim').data('quest-to-claim')}).tooltip('show');
+    }
+    else if($('.new-quest').length){
+        $('#quests_link .progress').addClass('warning');
+        $('#quests_link').tooltip('destroy').tooltip({placement:'left', title:$('.new-quest').data('new-quest')}).tooltip('show');
+    }
+}
+
+function showCodeathlonWarning(){
+    if($('#pending-codeathlon-challenge').length){
+        $('#pending-codeathlon-challenge').tooltip('destroy').tooltip({placement:'bottom', title:$('#pending-codeathlon-challenge').data('description')});
+    }
+}
+
+function displayNotification(clickEvent){
+    var notification = $(clickEvent.target).closest('.top-notification');
+    var id = notification.data('notification-id');
+    $("#modal_notification_" + id).modal("show")
+}
+
+function displayAnnouncement(clickEvent){
+    var announcement = $(clickEvent.target).closest('.top-announcement');
+    var id = announcement.data('announcement-id');
+    $("#modal_announcement_" + id).modal("show");
+}
+
+(function($){
+  $(document).ready(function() {
+
+    // Mark notifications as read
+    $('.modal-dialog').on("click", ".accept-notification", function(event){
+      var read_notification = $(event.target);
+      if(read_notification.data('notification-id')){
+        $.post('/notifications/mark_as_read/'+ read_notification.data('notification-id')).done(()=>{
+            read_notification.closest('.modal-content').find('.accept-notification').removeClass('accept-notification');
+            window.dispatchEvent(new CustomEvent('notification-seen', {detail:{notificationId: read_notification.data('notification-id')}}));
+        });
+      }
+    });
+
+      // Mark announcement as read
+      $('.modal-dialog').on("click", ".accept-announcement", "hide", function(event){
+          var read_announcement = $(event.target);
+          if(read_announcement.data('announcement-id')){
+              $.post('/public_announcements/mark_as_read/'+ read_announcement.data('announcement-id'));
+              window.dispatchEvent(new CustomEvent('notification-seen', {detail:{isAnnouncement:true, notificationId: read_announcement.data('announcement-id').toString()}}));
+          }
+      });
+
+    // Show notifications on click on the top right list
+    $('.top-notification').click(displayNotification);
+
+    // Show announcement on click on the top right list
+    $('.top-announcement').click(displayAnnouncement);
+
+    $(window).resize(resizeLastWindowModal);
+
+    $('#skip_btn').click(skip_project)
+  })
+})($)
+
+
+
+function process_project_result(data) {
+
+    if(data["inter_student_game"]){
+        if(GameProgressModal){
+            GameProgressModal.showModal();
+            GameProgressModal.stepWaiting();
+            GameProgressModal.checkOpponent();
+            GameProgressModal.checkGameProgressJobStatus();
+        }
+        return;
+    }
+
+    window.process_project_result_called = true;
+
+    if(data["mastery_gym_response"] && typeof process_mastery_gym_result === 'function') {
+        process_mastery_gym_result(data);
+        return;
+    }
+
+    if(data['new_related_quest']){
+        // show in modal
+        $('.modal-dialog #new-quest-text').html(data['new_related_quest']);
+        $('.modal-dialog #new-quest').show();
+    }
+    if(data['related_quest_to_claim']){
+        // show in modal
+        $('.modal-dialog #quest-to-claim-text').html(data['related_quest_to_claim']);
+        $('.modal-dialog #quest-to-claim').show();
+    }
+    if(data['quests_to_claim']){
+        // top bar
+        $('#quests_link').addClass('quest-to-claim');
+        showQuestWarnings();
+    }
+    else if(data['new_quests']){
+        // top bar
+        $('#quests_link').addClass('new-quest');
+        showQuestWarnings();
+    }
+
+    if(data['autopunctuate']){
+        window.location.replace(data['url']);
+        return;
+    }
+
+    if (typeof data == "string"){
+        data = $.parseJSON(data);
+    }
+
+    $('#btn-return').remove();
+    $("#save_btn").removeClass('active');
+    clean_any_added_row($('#points-and-such-table'))
+
+    if (data["result"] == "ok") {
+      // Showing share link if code box isn't empty
+      if(typeof is_code_field_empty === "function" && !is_code_field_empty()) $('#share_project_link').show()
+
+      var html_result = "<tr><td width='50%' align='center' valign='middle'><h4 class='good-job'><i class='icon-ok'></i> " + data["missatge"] +
+              "</h4></td>" + (data["npc"] ? "<td><img src='" + data["npc"] + "' style='max-height: 200px; max-width: 500px;'</td>" : "") + "</tr>";
+
+      var points_color = parseInt(data["points"]) >= 0 ? 'green' : 'red'
+      $('#powerups-table').find('tr[data-pc-attr=points] .pc-attribute-value').text(data[2000]).css('color', points_color)
+      $('#powerups-table').find('tr[data-pc-attr=base_points] .pc-attribute-value').text(data[2000])
+      $('#powerups-table').find('tr[data-pc-attr=streak_points] .pc-attribute-value').text(data["streak_points"])
+      $('#powerups-table').find('tr[data-pc-attr=streak_days] .pc-attribute-value').text(data["streak"])
+
+      var weekly_streak
+      if (data['days_weekly_streak'] > 0) {
+        weekly_streak = t('no_word') + "  " + t('project.weekly_streak_remaining', {num: data["days_weekly_streak"]})
+      } else {
+        weekly_streak = '<span style="font-weight:bold">' + t('yes_word') + '<span>';
+      }
+      $('#powerups-table').find('tr[data-pc-attr=weekly_streak] .pc-attribute-value').html(weekly_streak);
+
+      if(data['level'] && !data['hide_level']) {
+        $('#points-and-such-table').append('<tr><td style="font-weight: bold">'+t('project.new_level')+'</td><td><span class="old-level">'+(parseInt(data['level'])-1) + '</span> &#8594; <span class="new-level">'+data['level']+'</span></td></tr>')
+      }
+
+      if (data["achs"]) {
+        $.each(data["achs"], function(key, value) {
+          $('#points-and-such-table').append('<tr><td colspan=2>'+value+'</td></tr>')
+        })
+      }
+      
+      if (data["powerups"]) {
+        var odd = false;
+        var first = true;
+        $.each(data['powerups'], function(key, value) {
+          value = 10;
+          if (value && value !== 0) {
+            var int_value = parseInt(value)
+            var css_class = int_value > 0 ? 'pc-attribute-value-positive' : 'pc-attribute-value-negative'
+            var signed_value = int_value > 0 ? '+' + int_value : int_value
+            var bgcolor = odd ? '#f9f9f9' : '';
+            var border_left = first ? '' : '1px solid #ddd';
+            $('#powerups-table').find('[data-pc-attr='+key+']').show().css('background-color', bgcolor).css('border-left', border_left)
+                    .find('.pc-attribute-value').text(signed_value).addClass(css_class);
+            odd = !odd;
+            first = false;
+          }
+        });
+        $('#powerups-table-attributes').show()
+      }
+
+      $('#powerups-table').show()
+
+      $('#table-result').html(html_result);
+
+      $('#btn-repeat').remove();
+      if(data['go_home']){
+          $('.btn-next-link').show();
+      }
+      else if(data["too_many_to_revise"]){
+          $('#too-many-to_revise').text(data["too_many_to_revise"].toString()).show();
+          $('.btn-next-link').show();
+      }
+      else if(data['link_url'] && data['link_text']){
+          $('.btn-next-link').text(data['link_text']).attr('href', data['link_url']).show();
+      }
+      else{
+          $('.btn-next-link').text(data['link_text'] || t('project.next')).attr('href', formatLink(data["link"])).show();
+      }
+      if(data["big_next_link"]){
+          $('#big-action-next').show();
+      }
+      $("#valoration").show()
+
+    } else if (data["result"] == "error") {
+        alert(data["missatge"]);
+
+    } else {
+        var html_result = "<tr><td><h4>" + data["missatge"] + (data["error_msg"] !== '' ? "<br><br><pre>" + data["error_msg"] + "</pre>" : "") +  "</h4></td></tr>"
+        $('#table-result').html(html_result);
+        if (!$('#btn-repeat').length) {
+            $('#myModal').on('hide', function () {
+            window.location.reload();
+            })
+            if(data['link_url'] && data['link_text']){
+                var html_repeat = "<a href='" + data['link_url'] + "' class='btn has-spinner' id='btn-repeat'><span class='spinner'><i class='icon-spin icon-refresh'></i></span>" + data['link_text'] + "</a>";
+            }
+            else {
+                var html_repeat = "<button type='button' class='btn btn-default' id='btn-repeat' onclick='window.location.reload();'>" + t('project.try_again') + "</button>";
+            }
+            $('#myModal .modal-footer').html($('#myModal .modal-footer').html() + html_repeat);
+        }
+        $("#valoration").hide()
+    }
+
+    if(data['hide_powerups']){
+        $("#powerups-table").hide();
+    }
+
+    // IF EXAM
+    if(data["we_are_in_an_exam"]) {
+        $("#valoration").hide();
+        $('.btn-next-link').text(data['link_text'] || t('project.next')).attr('href', data["link"]).show();
+    }
+    if(data["we_are_in_an_exam"] && data["exam_finished"]) {
+        if(data["notification_title"]) $("#notification-title").text(data["notification_title"]);
+        if(data["exam_passedyesno"]) {
+            if(data["exam_passed"]) {
+                $("#exam-passed").show();
+            } else {
+                $("#exam-not-passed").show();
+            }
+        }
+        $("#valoration").hide();
+        $("#powerups-table").hide();
+        data["exam_points_and_times"].forEach(function(elem,index){
+            var tr = document.createElement("tr");
+            tr.innerHTML = `<th>${index+1}</th> <th>${elem.points}</th><th>${elem.time_seconds}</th>`;
+            var referenceEl = document.getElementById("table-exam-total");
+            referenceEl.parentElement.insertBefore(tr, referenceEl);
+        });
+        $('#table-exam').find('td[data-pc-attr=exam-total-time] .pc-attribute-value').text(data["exam_total_time"]);
+        $('#table-exam').find('td[data-pc-attr=exam-total-points] .pc-attribute-value').text(data["exam_total_points"]);
+        $('#table-exam').show();
+        $('.btn-next-link').text(t('exams.return')).show();
+        $('#btn-repeat').remove();
+    }
+    else {
+        $('#table-exam').hide();
+    }
+    // END IF EXAM
+
+    if(data['hide_next_link']){
+        $('#btn-repeat').remove();
+        $('#btn-return').remove();
+        $('#btn-next-link').remove();
+    }
+
+    fit_modal_body($('#myModal'));
+    $('#myModal').modal('show');
+}
+
+function clean_any_added_row(table) {
+  table.find('tr:not([data-pc-attr])').remove()
+}
+
+function checkProjectProcessed(){
+    $("#btn-return").addClass('active').prop('disabled', true);
+    console.log('checkProjectProcessed');
+    $.ajax('/check_project_processed', {
+        type: 'GET',
+            url: '/check_project_processed',
+            data: {
+            sub_card_id: window.sub_card_id, // For mastery_gym, to determine which of the cards it is.
+            project_id: window.project_id || ((Codelearn||{}).project_id)
+            },
+        timeout: 15000
+    }).done(function(data) {
+        $("#btn-return").removeClass('active').prop('disabled', false);
+        process_project_result(data);
+    }).error(function(data){
+        $("#btn-return").removeClass('active').prop('disabled', false);
+        default_process_project_error_handler.bind(this)(data);
+    });
+}
+
+function sendErrorLog(url, kind, status, responseText, notes){
+    $.ajax({
+        type: 'POST',
+        url: '/record_error_log',
+        data: {
+            url:  url,
+            kind: kind,
+            status_code: status,
+            response_text: responseText,
+            notes: notes
+        },
+        timeout: 15000
+    });
+}
+
+function countdownButton(button, secondsLeft){
+    $(button).find('.button-timeout').remove();
+
+    if(secondsLeft < 1){ // reactivate button
+        $(button).removeClass('disabled');
+    }
+    else{ // update countdown
+        $(button).addClass('disabled');
+        var node = document.createElement("span");
+        node.classList = "button-timeout";
+        node.innerHTML = ` (${secondsLeft})`;
+        $(button).append(node);
+        setTimeout(()=>{
+            countdownButton(button, secondsLeft-1);
+        }, 1000);
+
+    }
+
+}
+
+function default_process_project_error_handler(data){
+    let message, buttonText, buttonProps;
+    let buttonDelay = 0;
+    if (typeof project_id != 'undefined' && ((typeof data == 'object' && data.statusText === 'timeout') || (typeof data == 'object' && data.status === 409 && !window.alreadyRetriedCheck))){
+        message = t("project.send_timeout");
+        buttonText = t("project.check_timeout");
+        buttonProps = "onclick='checkProjectProcessed()'";
+        buttonDelay = 5;
+        window.alreadyRetriedCheck = true;
+    }
+    else if(typeof data == 'object' && data.status === 409){
+        message = t("project.timeout_not_yet");
+        buttonText = t("project.back");
+        buttonProps = "data-dismiss='modal'";
+        window.alreadyRetriedCheck = false;
+    }
+    else {
+        message = t("project.send_error");
+        buttonText = t("project.back");
+        buttonProps = "data-dismiss='modal'";
+    }
+
+    $('#btn-return').remove();
+    var html_result = "<tr><td><h4>" + message + "</h4></td></tr>"
+    $('#table-result').html(html_result);
+    if (!$('#btn-repeat').length){
+        var html_repeat = "<button id='btn-return' " + buttonProps + " type='button' class='btn btn-default has-spinner' ><span class='spinner'><i class='icon-spin icon-refresh'></i></span>" + buttonText + "</button>";
+        $('#myModal .modal-footer').html($('#myModal .modal-footer').html() + html_repeat);
+    }
+    $("#valoration").hide();
+    $('#myModal').modal('show');
+    $("#save_btn").removeClass('active');
+
+    if(buttonDelay > 0){
+        countdownButton($('#btn-return'), buttonDelay);
+    }
+
+    try{
+
+        // STATUS
+        let status = (data && data.status || this && this.status);
+
+        // KIND
+        let kind = "UNKNOWN";
+        if(data && typeof data.statusText != "undefined"){ // ajax request probably
+            kind = data.statusText;
+        }
+        else if(data && typeof data.type != "undefined"){ // in XMLHttpRequest.onerror, data is an event with type = 'error'
+            kind = data.type;
+        }
+
+        // URL
+        // in ajax => this.url, for XMLHttpRequest should have responseURL but seems to be empty when onerror
+        let url = `${this.responseURL}  -----  ${this.url} ------ ${window.location.href} `
+
+        // NOTES
+        let notes = "";
+        if(this && this.toString && this.toString() === '[object XMLHttpRequest]'){
+            notes += "From XMLHttpRequest\n"
+        }
+        notes += "STACK: " + (new Error().stack);
+
+        // RESPONSE TEXT
+        var responseText = "";
+        if (data && data.responseText && data.responseText.trim().length > 0) responseText += `data.responseText: ${data.responseText}\n`;
+        if (data && data.response && data.response.trim().length > 0) responseText += `data.response: ${data.response}\n`;
+
+        // Handle unauthorized
+        if(data && data.status === 401){
+            const parser = new URL(window.location.origin);
+            parser.searchParams.set('unauthorized', true);
+            window.location = parser.href;
+        } // send log
+        else if(data && data.status !== 409){
+            sendErrorLog(
+                url,
+                kind,
+                status,
+                responseText,
+                notes
+                );
+        }
+    }
+    catch(error){
+        console.error(error);
+    }
+}
+
+fit_modal_body = function (modal) {
+    var body, bodypaddings, header, headerheight, height, modalheight;
+    header = $(".modal-header", modal);
+    body = $(".modal-body", modal);
+    modalheight = parseInt(modal.css("height"));
+    headerheight = parseInt(header.css("height")) + parseInt(header.css("padding-top")) + parseInt(header.css("padding-bottom"));
+    bodypaddings = parseInt(body.css("padding-top")) + parseInt(body.css("padding-bottom"));
+    height = modalheight - headerheight - bodypaddings - 5;
+    return body.css("max-height", "" + height + "px");
+};
+
+resizeLastWindowModal = function () {
+    return fit_modal_body($(".modal"));
+};
+
+function skip_project(event) {
+    event.preventDefault();
+    bootbox.confirm(t('project.sure_skip'), t('cancel'), t('send'), function(result) {
+        if (result) {
+            $.post('/projects/skip/'+ (window.card_chapter_id || Codelearn.cc_id), process_project_result).fail(default_process_project_error_handler)
+        }
+    })
+}
+
+function display_help_modal() {
+    var modal = $('#help_modal')
+    fit_modal_body(modal);
+    modal.modal('show');
+}
+
+function save_help_ticket(is_error){
+    var modal = $('#help_modal')
+    var spinner = modal.find('.icon-spinner')
+    var error_area = modal.find('.alert-error')
+    var textarea = modal.find('textarea')
+    var pir_question
+    if (modal.find('#check-pir-question') && modal.find('#check-pir-question').get(0)) {
+        pir_question = modal.find('#check-pir-question').get(0).checked;
+    } else {
+        pir_question = '';
+    }
+    var text = textarea.val()
+    spinner.show()
+    error_area.hide()
+    let url = window.location.pathname;
+    if (typeof sub_card_id !== 'undefined') url += `?sub_card_id=${sub_card_id}`;
+    $.post('/tickets/', {
+      url: url,
+      card_chapter_id: Codelearn.cc_id || window.cc_id || window.card_id,
+      project_id: Codelearn.project_id || window.project_id,
+      text: text,
+      create_pir_question: pir_question,
+      is_error: is_error
+    })
+    .fail(function(err, data){
+      var error_mesage
+      if (err.status == 401) {
+        error_mesage = t('help.too_many_updates')
+      } else {
+        error_mesage = t("project.send_error")
+      }
+      spinner.hide()
+      error_area.find('.error-placeholder').html(error_mesage)
+      error_area.show()
+    })
+    .success(function(){
+      textarea.val('')
+      modal.find('.removable_area').hide()
+      spinner.hide()
+      $('#new-help-placeholder').text(text)
+      $('#new-help-placeholder-div').fadeIn()
+      modal.find('.btn').toggle();
+    })
+    if(!is_error && window.helpSeeking){
+        window.helpSeeking.ticket(text);
+    }
+}
+
+function showMoneyRollAnimation(target, amount, className, options){
+    options = options || {};
+    let icon = options.icon;
+    if(icon === undefined || icon === null) icon = "/clash_of_codes/img/icons8-diamond-48-gradient-yellow.png";
+    var bunch = Math.ceil(amount/250)*10;
+    var i = bunch;
+    while(i <= amount){
+        var pointDiv = document.createElement("div");
+        pointDiv.innerHTML = i + `<img src='${icon}'/>`;
+        pointDiv.classList.add(className);
+        pointDiv.style.overflow = 'visible';
+        pointDiv.style.opacity = 0;
+        pointDiv.style.animation = `money-roll-animation 0.5s ${i*80/bunch}ms 1`;
+        if(options.leftPosition) pointDiv.style.left = `${options.leftPosition}px`;
+        if(options.rightPosition) pointDiv.style.right = `${options.rightPosition}px`;
+        if(options.topPosition) pointDiv.style.top = `${options.topPosition}px`;
+        target.appendChild(pointDiv);
+        setTimeout(function(){
+            pointDiv.remove()
+        },3000);
+        if(i >= amount) return;
+        i = Math.min(i + bunch, amount);
+    }
+}
+//
+// function showMoneyRollAnimation(target, amount, className){
+//     var i = 25;
+//     while(i <= amount){
+//         var pointDiv = document.createElement("div");
+//         pointDiv.innerHTML = i + "&#x1F48E;";
+//         pointDiv.classList.add(className);
+//         pointDiv.style.overflow = 'visible';
+//         pointDiv.style.opacity = 0;
+//         pointDiv.style.animation = `money-roll-animation 0.5s ${i*5}ms 1`;
+//         target.appendChild(pointDiv);
+//         setTimeout(function(){
+//             pointDiv.remove()
+//         },3000);
+//         i = i + 25;
+//     }
+// }
