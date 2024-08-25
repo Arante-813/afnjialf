@@ -122,7 +122,7 @@ $(document).ready(function(id) {
 					var images = new Array();
                     var extras = {};
 					images[1] = "";
-					images[2] = "https://cdn.discordapp.com/avatars/1231539587524989003/dbc4a44c9aa6c438bb17f1e6bd121a26.webp?size=128"; //base
+					images[2] = "https://fun.codelearn.cat/assets/facil.png"; //base
 					images[3] = "";
 					images[4] = "";
 					images[5] = "";
