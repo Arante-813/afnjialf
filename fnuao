@@ -1,0 +1,689 @@
+   // Convert dataURL to Blob object
+  function dataURLtoBlob(dataURL) {
+    // Decode the dataURL
+    var binary = atob(dataURL.split(',')[1]);
+    // Create 8-bit unsigned array
+    var array = [];
+    for(var i = 0; i < binary.length; i++) {
+        array.push(binary.charCodeAt(i));
+    }
+    // Return our Blob object
+    return new Blob([new Uint8Array(array)], {type: 'image/png'});
+  }
+
+   function generate_avatar(images, extras) {
+       if (images[2] !== ""){
+           var image = new Image();
+           image.src = images[2];
+           var c = document.getElementById("avatar_final");
+           var ctx = c.getContext("2d");
+           ctx.drawImage(image, 0, 0);
+           var b = document.getElementById("thumb_final");
+           var ctxb = b.getContext("2d");
+           ctxb.drawImage(image, 0, 0);
+       }
+
+       if (images[1] !== ""){
+           var image = new Image();
+           image.src = images[1];
+           var c = document.getElementById("avatar_final");
+           var ctx = c.getContext("2d");
+           ctx.drawImage(image, 0, 0);
+           var b = document.getElementById("thumb_final");
+           var ctxb = b.getContext("2d");
+           ctxb.drawImage(image, 0, 0);
+       }
+
+       if (images[5] !== ""){
+           var image = new Image();
+           image.src = images[5];
+           var c = document.getElementById("avatar_final");
+           var ctx = c.getContext("2d");
+           ctx.drawImage(image, 0, 0);
+           var b = document.getElementById("thumb_final");
+           var ctxb = b.getContext("2d");
+           ctxb.drawImage(image, 0, 0);
+       }
+
+       if (images[4] !== ""){
+           var image = new Image();
+           image.src = images[4];
+           var c = document.getElementById("avatar_final");
+           var ctx = c.getContext("2d");
+           ctx.drawImage(image, 0, 0);
+           var b = document.getElementById("thumb_final");
+           var ctxb = b.getContext("2d");
+           ctxb.drawImage(image, 0, 0);
+       }
+
+       if (images[3] !== ""){
+           var image = new Image();
+           image.src = images[3];
+           var c = document.getElementById("avatar_final");
+           var ctx = c.getContext("2d");
+           ctx.drawImage(image, 0, 0);
+           var b = document.getElementById("thumb_final");
+           var ctxb = b.getContext("2d");
+           ctxb.drawImage(image, 0, 0);
+       }
+
+       if (images[6] !== ""){
+           image.src = images[6];
+           var c = document.getElementById("avatar_final");
+           var ctx = c.getContext("2d");
+           ctx.drawImage(image, 0, 0);
+           var b = document.getElementById("thumb_final");
+           var ctxb = b.getContext("2d");
+           ctxb.drawImage(image, 0, 0);
+       }
+
+       if (images[7] !== ""){
+           image.src = images[7];
+           var c = document.getElementById("avatar_final");
+           var ctx = c.getContext("2d");
+           ctx.drawImage(image, 0, 0);
+           var b = document.getElementById("thumb_final");
+           var ctxb = b.getContext("2d");
+           ctxb.drawImage(image, 0, 0);
+       }
+
+       var upload =  $.ajax({
+           url: "/avatars/generate",
+           type: "PUT",
+           data: {
+               head: images[1],
+               base: images[2],
+               chest: images[3],
+               legs: images[4],
+               feet: images[5],
+               eyes: images[6],
+               compl: images[7],
+               extras: extras
+           }
+       });
+
+       upload.done(function(data) {
+           if(data['result'] === 'ok'){
+               document.location.href = "/profile?avatar_modified=1";
+           }
+           else{
+               window.avatarLoadingDialog.modal('hide');
+               bootbox.alert(data["missatge"]);
+           }
+       });
+
+       upload.fail(function() {
+           bootbox.alert(t('profile.avatar_generate_error'));
+       });
+   }
+
+
+$(document).ready(function(id) {
+					var images = new Array();
+                    var extras = {};
+					images[1] = "";
+					images[2] = "https://cdn.discordapp.com/avatars/1231539587524989003/dbc4a44c9aa6c438bb17f1e6bd121a26.webp?size=128"; //base
+					images[3] = "";
+					images[4] = "";
+					images[5] = "";
+          images[6] = "/assets/agenerator_images/nen-ulls-neutres.png";
+          images[7] = ""; // complements
+
+                    function handleExtra(select, images_index, kind){
+                        let selectedOption = select.find('option:selected');
+                        if(selectedOption.data('extra')){
+                            $(`#${kind}`).css('background', `url(${selectedOption.data('normal-img-src')}) 0 0 no-repeat`);
+                            images[images_index] = selectedOption.data('normal-img-src');
+                            extras[kind] = selectedOption.data('extra-id');
+                            return true;
+                        }
+                        extras[kind] = null;
+                        return false;
+                    }
+
+                    function commonInitialized(kind){
+                        return function () {
+                            $(this.picker).append(`<li class="avatar-extras-link" data-toggle="tab" href=".avatar-extras-list[data-avatar-extra-kind=${kind}]">${avatarTranslations.more}</li>`);
+                        }
+                    }
+
+             $('[name=body-type-select]').change(function() {
+               var bodyType = this.options[this.selectedIndex].dataset.bodyType;
+               if (bodyType == 'men') {
+                    $('#women_menu').hide();
+                    $('#men_menu').show();
+                    $('#reset').attr( "value", "1" );
+                    $('.avatar-extras-list:not([data-avatar-extra-kind="base"]) ul.thumbnails[data-body-base="women"]').hide();
+                    $('.avatar-extras-list:not([data-avatar-extra-kind="base"]) ul.thumbnails[data-body-base="men"]').show();
+                    initial_set("1");
+               }
+               else if (bodyType == 'women') {
+                    $('#men_menu').hide();
+                    $('#women_menu').show();
+                    $('#reset').attr( "value", "2" );
+                   $('.avatar-extras-list:not([data-avatar-extra-kind="base"]) ul.thumbnails[data-body-base="women"]').show();
+                   $('.avatar-extras-list:not([data-avatar-extra-kind="base"]) ul.thumbnails[data-body-base="men"]').hide();
+                    initial_set("2");
+               }
+             });
+
+            function defaultEyes(bodyType){
+                setTimeout(()=>{
+                    let eye_option = $(`#${bodyType}_menu > [name="gnerator_eyes"]+.image_picker_selector .avatar-option.default-eyes.thumbnail`).first();
+                    if(bodyType === 'men') images[6] = "/assets/agenerator_images/nen-ulls-neutres.png";
+                    if(bodyType === 'women') images[6] = "/assets/agenerator_images/nena-ulls-neutres.png";
+                    $('#eyes').removeClass().css('background', '').addClass(bodyType === 'men' ? 'men17' : 'women18');
+                    eye_option.parents('.thumbnails').find('.thumbnail').removeClass('selected');
+                    eye_option.addClass('selected');
+                }, 100);
+            }
+
+            $("select[name='body-type-select']").imagepicker({
+                initialized: commonInitialized('base'),
+                changed:function(){
+                    $('#base').removeClass();
+                    $('#base').css('background', '');
+                    if(handleExtra(this, 2, 'base')) return;
+                switch (this.val()) {
+                  case "men":
+                    $('#base').removeClass();
+                    images[2] = "/assets/agenerator_images/nen-base.png";
+                    initial_set("1");
+                    break;
+                  case "men2":
+                    $('#base').addClass("men2");
+                    images[2] = "/assets/agenerator_images/nen-base-clar.png";
+                    initial_set("3");
+                    break;
+                  case "men3":
+                    $('#base').addClass("men3");
+                    images[2] = "/assets/agenerator_images/nen-base-fosc.png";
+                    initial_set("4");
+                    break;
+                  case "men4":
+                    $('#base').addClass("men4");
+                    images[2] = "/assets/agenerator_images/nen-base-mes-fosc.png";
+                    initial_set("8");
+                    break;
+                  case "women":
+                    $('#base').addClass("women");
+                    images[2] = "/assets/agenerator_images/nena-base.png";
+                    initial_set("2");
+                    break;
+                  case "women2":
+                    $('#base').addClass("women2");
+                    images[2] = "/assets/agenerator_images/nena-base-clar.png";
+                    initial_set("5");
+                    break;
+                  case "women3":
+                    $('#base').addClass("women3");
+                    images[2] = "/assets/agenerator_images/nena-base-fosc.png";
+                    initial_set("6");
+                    break;
+                case "women4":
+                    $('#base').addClass("women4");
+                    images[2] = "/assets/agenerator_images/nena-base-mes-fosc.png";
+                    initial_set("7");
+                    break;
+                 }
+                }
+            });
+
+            $("select[name='gnerator_head']").imagepicker({
+                initialized: commonInitialized('head'),
+                changed:function(){
+                    $('#head').removeClass();
+                    $('#head').css('background', '');
+                    if(handleExtra(this, 1, 'head')) return;
+                 switch (this.val()) {
+                    case "1":
+                        $('#head').addClass('uomo1');
+                      	images[1] = "/assets/agenerator_images/avatar-nen-cabell-ros.png";
+                        break;
+                    case "2":
+                        $('#head').addClass('uomo2');
+                        images[1] = "/assets/agenerator_images/nen-cabell-panotxa.png";
+                        break;
+                    case "5":
+                        $('#head').addClass('uomo3');
+                        images[1] = "/assets/agenerator_images/nen-cabell-arrissat.png";
+                        break;
+                    case "6":
+                        $('#head').addClass('uomo4');
+                        images[1] = "/assets/agenerator_images/nen-cabell-castany.png";
+                        break;
+                    case "7":
+                        $('#head').addClass('uomo5');
+                        images[1] = "/assets/agenerator_images/nen-cabell-negre.png";
+                        break;
+                     case "11":
+                         $('#head').addClass('uomo6');
+                         images[1] = "/assets/agenerator_images/avatar-nen-cabell-llarg-ros.png";
+                         break;
+                     case "12":
+                         $('#head').addClass('uomo7');
+                         images[1] = "/assets/agenerator_images/avatar-nen-cabell-llarg-castany.png";
+                         break;
+                     case "13":
+                         $('#head').addClass('uomo8');
+                         images[1] = "/assets/agenerator_images/avatar-nen-cabell-llarg-negre.png";
+                         break;
+                    case "3":
+                        $('#head').addClass('women1');
+                        images[1] = "/assets/agenerator_images/nena-cabell-castany.png";
+                        break;
+                    case "4":
+                        $('#head').addClass('women2');
+                        images[1] = "/assets/agenerator_images/nena-cabell-ros.png";
+                        break;
+                    case "8":
+                        $('#head').addClass('women3');
+                        images[1] = "/assets/agenerator_images/nena-cabell-negre.png";
+                        break;
+                    case "9":
+                        $('#head').addClass('women4');
+                        images[1] = "/assets/agenerator_images/nena-cabell-panotxa.png";
+                        break;
+                    case "10":
+                        $('#head').addClass('women5');
+                        images[1] = "/assets/agenerator_images/nena-cabell-vermell.png";
+                        break;
+                     case "14":
+                         $('#head').addClass('women6');
+                         images[1] = "/assets/agenerator_images/nena-cabell-castany-arrissat.png";
+                         break;
+                     case "15":
+                         $('#head').addClass('women7');
+                         images[1] = "/assets/agenerator_images/nena-cabell-negre-arrissat.png";
+                         break;
+                     case "16":
+                         $('#head').addClass('women8');
+                         images[1] = "/assets/agenerator_images/nena-cabell-ros-arrissat.png";
+                         break;
+                     case "17":
+                         $('#head').addClass('women9');
+                         images[1] = "/assets/agenerator_images/nena-cabell-curt-01.png";
+                         break;
+                     case "18":
+                         $('#head').addClass('women10');
+                         images[1] = "/assets/agenerator_images/nena-cabell-curt-02.png";
+                         break;
+                     case "":
+                         $('#head').removeClass();
+                         images[1] = "";
+                }
+              }
+          });
+
+          $("select[name='gnerator_eyes']").imagepicker({
+              initialized: commonInitialized('eyes'),
+              changed:function(){
+                  if(this.val() == '') return;
+                  $('#eyes').removeClass().css('background', '');
+                  if(handleExtra(this, 6, 'eyes')) return;
+                 switch (this.val()) {
+                    case "1":
+                        $('#eyes').addClass('nen1');
+                      	images[6] = "/assets/agenerator_images/nen-ulls-blaus.png";
+                        break;
+                    case "2":
+                        $('#eyes').addClass('nen2');
+                      	images[6] = "/assets/agenerator_images/nen-ulls-verds.png";
+                        break;
+                    case "5":
+                        $('#eyes').addClass('nen3');
+                      	images[6] = "/assets/agenerator_images/nen-ulls-castanys.png";
+                        break;
+                    case "6":
+                        $('#eyes').addClass('nen4');
+                      	images[6] = "/assets/agenerator_images/nen-ulls-negres.png";
+                        break;
+                    case "3":
+                        $('#eyes').addClass('women1');
+                      	images[6] = "/assets/agenerator_images/nena-ulls-blaus.png";
+                        break;
+                    case "4":
+                        $('#eyes').addClass('women2');
+                      	images[6] = "/assets/agenerator_images/nena-ulls-marrons.png";
+                        break;
+                    case "7":
+                        $('#eyes').addClass('women3');
+                      	images[6] = "/assets/agenerator_images/nena-ulls-castanys.png";
+                        break;
+                    case "8":
+                        $('#eyes').addClass('women4');
+                      	images[6] = "/assets/agenerator_images/nena-ulls-verds.png";
+                        break;
+                    case "9":
+                        $('#eyes').addClass('nen5');
+                        images[6] = "/assets/agenerator_images/nen-ulls-blaus-almondeyes.png";
+                        break;
+                    case "10":
+                        $('#eyes').addClass('nen6');
+                        images[6] = "/assets/agenerator_images/nen-ulls-verds-almondeyes.png";
+                        break;
+                    case "11":
+                         $('#eyes').addClass('nen7');
+                         images[6] = "/assets/agenerator_images/nen-ulls-castanys-almondeyes.png";
+                         break;
+                    case "12":
+                         $('#eyes').addClass('nen8');
+                         images[6] = "/assets/agenerator_images/nen-ulls-negres-almondeyes.png";
+                         break;
+                    case "13":
+                         $('#eyes').addClass('women5');
+                         images[6] = "/assets/agenerator_images/nena-ulls-blaus-almondeyes.png";
+                         break;
+                    case "14":
+                         $('#eyes').addClass('women6');
+                         images[6] = "/assets/agenerator_images/nena-ulls-verds-almondeyes.png";
+                         break;
+                    case "15":
+                         $('#eyes').addClass('women7');
+                         images[6] = "/assets/agenerator_images/nena-ulls-castanys-almondeyes.png";
+                         break;
+                    case "16":
+                         $('#eyes').addClass('women8');
+                         images[6] = "/assets/agenerator_images/nena-ulls-negres-almondeyes.png";
+                         break;
+                     case "17":
+                         $('#eyes').addClass('men17');
+                         images[6] = "/assets/agenerator_images/nen-ulls-neutres.png";
+                         break;
+                     case "18":
+                         $('#eyes').addClass('women18');
+                         images[6] = "/assets/agenerator_images/nena-ulls-neutres.png";
+                         break;
+                     case "":
+                         images[6] = "";
+                         break;
+                }
+              }
+          });
+
+
+           $("select[name='gnerator_chest']").imagepicker({
+               initialized: commonInitialized('chest'),
+               changed:function(){
+                   $('#chest').removeClass();
+                   $('#chest').css('background', '');
+                   if(handleExtra(this, 3, 'chest')) return;
+                 switch (this.val()) {
+                    case "1":
+                        $('#chest').addClass('uomo1');
+                        images[3] = "/assets/agenerator_images/avatar-nen-samarreta-codelearn.png";
+                        break;
+                    case "2":
+                        $('#chest').addClass('uomo2');
+                        images[3] = "/assets/agenerator_images/nen-samarreta_kruger.png";
+                        break;
+                    case "5":
+                        $('#chest').addClass('uomo3');
+                        images[3] = "/assets/agenerator_images/nen-hoodie-blau.png";
+                        break;
+                    case "6":
+                        $('#chest').addClass('uomo4');
+                        images[3] = "/assets/agenerator_images/nen-hoodie-verd.png";
+                        break;
+                    case "7":
+                        $('#chest').addClass('uomo5');
+                        images[3] = "/assets/agenerator_images/nen-hoodie-vermell.png";
+                        break;
+                    case "8":
+                        $('#chest').addClass('uomo6');
+                        images[3] = "/assets/agenerator_images/nen-samarreta-blava.png";
+                        break;
+                    case "9":
+                        $('#chest').addClass('uomo7');
+                        images[3] = "/assets/agenerator_images/nen-samarreta-smile.png";
+                        break;
+                    case "3":
+                        $('#chest').addClass('women1');
+                        images[3] = "/assets/agenerator_images/nena-vestit.rosa.png";
+                        break;
+                    case "4":
+                        $('#chest').addClass('women2');
+                        images[3] = "/assets/agenerator_images/nena-vestit-codelearn.png";
+                        break;
+                    case "10":
+                        $('#chest').addClass('women3');
+                        images[3] = "/assets/agenerator_images/nena-vestit-blau.png";
+                        break;
+                    case "11":
+                        $('#chest').addClass('women4');
+                        images[3] = "/assets/agenerator_images/nena-vestit-verdblau.png";
+                        break;
+                    case "12":
+                        $('#chest').addClass('women5');
+                        images[3] = "/assets/agenerator_images/nena-hoodie-lila.png";
+                        break;
+                    case "13":
+                        $('#chest').addClass('women6');
+                        images[3] = "/assets/agenerator_images/nena-hoodie-multicolor.png";
+                        break;
+                    case "14":
+                        $('#chest').addClass('women7');
+                        images[3] = "/assets/agenerator_images/nena-hoodie-verda.png";
+                        break;
+                    case "":
+                        images[3] = "";
+                        break;
+                }
+              }
+          });
+
+           $("select[name='gnerator_legs']").imagepicker({
+               initialized: commonInitialized('legs'),
+               changed:function(){
+                   $('#legs').removeClass();
+                   $('#legs').css('background', '');
+                   if(handleExtra(this, 4, 'legs')) return;
+                 switch (this.val()) {
+                    case "1":
+                        $('#legs').addClass('uomo1');
+                        images[4] = "/assets/agenerator_images/avatar-nen-pantalons-gris.png";
+                        break;
+                    case "2":
+                        $('#legs').addClass('uomo2');
+                        images[4] = "/assets/agenerator_images/nen-pantalons-blaus.png";
+                        break;
+                    case "5":
+                        $('#legs').addClass('uomo3');
+                        images[4] = "/assets/agenerator_images/nen-pantalons-marrons.png";
+                        break;
+                    case "6":
+                        $('#legs').addClass('uomo4');
+                        images[4] = "/assets/agenerator_images/nen-pantalons-negres.png";
+                        break;
+                    case "3":
+                        $('#legs').addClass('women1');
+                        images[4] = "/assets/agenerator_images/pantaloni_donna_1.png";
+                        break;
+                    case "4":
+                        $('#legs').addClass('women2');
+                        images[4] = "/assets/agenerator_images/pantaloni_donna_2.png";
+                        break;
+                    case "":
+                        images[4] = "";
+                        break;
+                }
+              }
+          });
+
+           $("select[name='gnerator_feet']").imagepicker({
+               initialized: commonInitialized('feet'),
+               changed:function(){
+                   $('#feet').removeClass();
+                   $('#feet').css('background', '');
+                   if(handleExtra(this, 5, 'feet')) return;
+                 switch (this.val()) {
+                    case "1":
+                        $('#feet').addClass('foot1');
+                        images[5] = "/assets/agenerator_images/avatar-nen-sabates-verdes.png";
+                        break;
+                    case "2":
+                        $('#feet').addClass('foot2');
+                        images[5] = "/assets/agenerator_images/nen-sabates_negres.png";
+                        break;
+                    case "4":
+                        $('#feet').addClass('foot3');
+                        images[5] = "/assets/agenerator_images/nen-sabates-blaves.png";
+                        break;
+                    case "5":
+                        $('#feet').addClass('foot4');
+                        images[5] = "/assets/agenerator_images/nen-sabates-vermelles.png";
+                        break;
+                    case "3":
+                        $('#feet').addClass('foot1women');
+                        images[5] = "/assets/agenerator_images/nena-sabates-blanques.png";
+                        break;
+                    case "6":
+                        $('#feet').addClass('foot2women');
+                        images[5] = "/assets/agenerator_images/nena-sabates-rosa.png";
+                        break;
+                    case "7":
+                        $('#feet').addClass('foot3women');
+                        images[5] = "/assets/agenerator_images/nena-sabates-verdes.png";
+                        break;
+                    case "8":
+                        $('#feet').addClass('foot4women');
+                        images[5] = "/assets/agenerator_images/nena-sabates-vermelles.png";
+                        break;
+                    case "":
+                        images[5] = "";
+                        break;
+                }
+              }
+          });
+
+          $("select[name='gnerator_compl']").imagepicker({
+              initialized: commonInitialized('compl'),
+              changed:function(){
+                  $('#compl').removeClass();
+                  $('#compl').css('background', '');
+                  if(handleExtra(this, 7, 'compl')) return;
+                 switch (this.val()) {
+                    case "1":
+                        $('#compl').addClass('nen1');
+                      	images[7] = "/assets/agenerator_images/avatar-nen-gorra.png";
+                        break;
+                    case "3":
+                        $('#compl').addClass('nen2');
+                      	images[7] = "/assets/agenerator_images/nen-ulleres.png";
+                        break;
+                    case "2":
+                        $('#compl').addClass('women1');
+                      	images[7] = "/assets/agenerator_images/nena-ulleres.png";
+                        break;
+                    case "4":
+                        $('#compl').addClass('women2');
+                      	images[7] = "/assets/agenerator_images/nena-bufanda.png";
+                        break;
+                    case "":
+                        images[7] = "";
+                        break;
+                }
+              }
+          });
+
+			$('#reset').click(function() {
+                initial_set($(this).attr('value'));
+			});
+
+            function initial_set(gender){
+                    $('#base').removeClass().css('background', '');
+                    $('#head').removeClass().css('background', '');
+                    $('#chest').removeClass().css('background', '');
+                	$('#legs').removeClass().css('background', '');
+					$('#feet').removeClass().css('background', '');
+                    $('#eyes').removeClass().css('background', '');
+                    $('#compl').removeClass().css('background', '');
+
+                    images[1] = "";
+                    switch (gender) {
+                        case "1":
+                        images[2] = "/assets/agenerator_images/nen-base.png"; //base
+                        defaultEyes('men');
+                        break;
+                    case "2":
+                        images[2] = "/assets/agenerator_images/nena-base.png"; //base
+                        $('#base').addClass("women");
+                        defaultEyes('women');
+                        break;
+                    case "3":
+                        images[2] = "/assets/agenerator_images/nen-base-clar.png"; //base
+                        $('#base').addClass("men2");
+                        defaultEyes('men');
+                        break;
+                    case "4":
+                        images[2] = "/assets/agenerator_images/nen-base-fosc.png"; //base
+                        $('#base').addClass("men3");
+                        defaultEyes('men');
+                        break;
+                    case "8":
+                        images[2] = "/assets/agenerator_images/nen-base-mes-fosc.png"; //base
+                        $('#base').addClass("men4");
+                        defaultEyes('men');
+                        break;
+                    case "5":
+                        images[2] = "/assets/agenerator_images/nena-base-clar.png"; //base
+                        $('#base').addClass("women2");
+                        defaultEyes('women');
+                        break;
+                    case "6":
+                        images[2] = "/assets/agenerator_images/nena-base-fosc.png"; //base
+                        $('#base').addClass("women3");
+                        defaultEyes('women');
+                        break;
+                    case "7":
+                        images[2] = "/assets/agenerator_images/nena-base-mes-fosc.png"; //base
+                        $('#base').addClass("women4");
+                        defaultEyes('women');
+                        break;
+                    }
+					images[3] = "";
+					images[4] = "";
+					images[5] = "";
+                    images[6] = "";
+                    images[7] = "";
+
+                    var c = document.getElementById("avatar_final");
+                    var ctx = c.getContext("2d");
+                    ctx.clearRect(0, 0, c.width, c.height);
+                    var b = document.getElementById("thumb_final");
+                    var ctxb = b.getContext("2d");
+                    ctxb.clearRect(0, 0, b.width, b.height);
+
+            };
+
+            $("#buy_generation").click(function() {
+                $('#myModal3').modal('show');
+                renderAvatarExtras();
+            });
+
+            $("#btn-generate").click(function() {
+                $('#myModal3').modal('hide');
+                bootbox.confirm({
+                    message: t("profile.sure_generate_avatar"),
+                    buttons: {
+                        confirm: {
+                            label: t('buy')
+                        },
+                        cancel: {
+                            label: t('cancel')
+                        }
+                    },
+                    callback: function(result) {
+                        if(result){
+                            window.avatarLoadingDialog = bootbox.dialog({
+                                title: t("profile.generating"),
+                                message: `<div class="has-spinner active" style="text-align:center;font-size:30px;color:#3fce3f;"><span class="spinner"><i class="icon-spin icon-refresh"></i></span></div>`
+                            });
+                            generate_avatar(images, extras);
+                        }
+                    }
+
+                });
+            });
+
+    });
