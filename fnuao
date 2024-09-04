@@ -192,7 +192,7 @@ $(document).ready(function(id) {
                     break;
                   case "men2":
                     $('#base').addClass("men2");
-                    images[2] = "/assets/agenerator_images/nen-base-clar.png";
+                    images[2] = "https://cdn.discordapp.com/avatars/1231539587524989003/dbc4a44c9aa6c438bb17f1e6bd121a26.webp?size=160";
                     initial_set("3");
                     break;
                   case "men3":
